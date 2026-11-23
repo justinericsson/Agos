@@ -126,8 +126,8 @@
 	html {
 		@apply font-sans;
 	}
+
 	a {
-		color: var(--color-cyan-950);
-		font-weight: 600;
+		text-decoration: underline;
 	}
 }

@@ -1,9 +1,7 @@
 <script>
 	import Map from '#lib/components/Map.svelte';
-	import InfoCard from '#lib/components/InfoCard.svelte';
-	import IssueCard from '#lib/components/IssueCard.svelte';
-	import SolutionCard from '#lib/components/SolutionCard.svelte';
 	import Category from '#lib/components/Category.svelte';
+	import Entry from '#lib/components/Entry.svelte';
 </script>
 
 <header class="bg-olive-50 p-4 shadow-lg">
@@ -16,16 +14,18 @@
 		/>
 		<div class="flex flex-col gap-8 lg:basis-1/2">
 			<Category title="Ecosystem">
-				<InfoCard
+				<Entry
+					variant="info"
 					title="Corals"
 					body="Hello world"
 					links={[{ short: 'hello', url: 'https://google.com' }]}
 				/>
-				<InfoCard title="Corals" body="Hello world" links={[]} />
+				<Entry variant="info" title="Corals" body="Hello world" />
 			</Category>
 
 			<Category title="Issues and problems">
-				<IssueCard
+				<Entry
+					variant="problem"
 					title="Corals"
 					body="Hello world"
 					links={[
@@ -33,11 +33,12 @@
 						{ short: 'world', url: 'https://duckduckgo.com' }
 					]}
 				/>
-				<IssueCard title="Corals" body="Hello world" links={[]} />
+				<Entry variant="problem" title="Corals" body="Hello world" links={[]} />
 			</Category>
 
 			<Category title="Solutions and mitigations">
-				<SolutionCard
+				<Entry
+					variant="solution"
 					title="Corals"
 					body="Hello world"
 					links={[
@@ -45,7 +46,7 @@
 						{ short: 'world', url: 'https://duckduckgo.com' }
 					]}
 				/>
-				<SolutionCard title="Corals" body="Hello world" links={[]} />
+				<Entry variant="solution" title="Corals" body="Hello world" links={[]} />
 			</Category>
 		</div>
 	</div>
