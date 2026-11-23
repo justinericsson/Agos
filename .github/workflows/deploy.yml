@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install pnpm
-        uses: pnpm/actin-setup@v6
+        uses: pnpm/action-setup@v6
         with:
           node-version: 26
           cache: pnpm
