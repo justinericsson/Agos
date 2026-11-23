@@ -1,21 +1,114 @@
 <script lang="ts">
-	import { Map as MapLibre, setWorkerUrl } from 'maplibre-gl';
+	import { GeoJSONSource, Map as MapLibre, setWorkerUrl, type GeoJSONFeature } from 'maplibre-gl';
 	import { onDestroy, onMount } from 'svelte';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 
+	import countryData from '#lib/assets/geojson/country/lowres/country.0.001.json';
+	import bbox from '@turf/bbox';
+	import Button from './ui/button/button.svelte';
+
 	setWorkerUrl(workerUrl);
 
-	import countryData from '#lib/assets/geojson/country/lowres/country.0.001.json';
+	const RES = '0.001';
+	const geojsonModules = import.meta.glob([
+		'#lib/assets/geojson/regions/lowres/*.json',
+		'#lib/assets/geojson/provdists/lowres/*.json'
+	]);
 
 	let hoveredName = $state<string | null>(null);
+	let selectedRegion = $state<{ code: number; name: string } | null>(null);
+	let selectedProvince = $state<{ code: number; name: string } | null>(null);
+	let loading = $state(false);
 
 	let mapContainer: HTMLDivElement;
 	let map: MapLibre;
 
-	const emptyFeatureCollection = { type: 'FeatureCollection', features: [] as object[] };
+	const emptyFeatureCollection: GeoJSON.FeatureCollection = {
+		type: 'FeatureCollection',
+		features: []
+	};
 
-	function bindLayerEvents(layerId: string, sourceId: string, nameProp: string) {
+	async function loadGeoJson(relativePath: string): Promise<GeoJSON.FeatureCollection> {
+		const key = `/src/lib/assets/geojson/${relativePath}`;
+		const promise = geojsonModules[key];
+
+		if (!promise) {
+			throw new Error(`GeoJSON asset not found at ${key}`);
+		}
+
+		loading = true;
+		try {
+			const mod = await promise();
+			return mod.default as GeoJSON.FeatureCollection;
+		} finally {
+			loading = false;
+		}
+	}
+
+	function flyToFeature(feature: GeoJSONFeature) {
+		if (!map) return;
+
+		const [minLng, minLat, maxLng, maxLat] = bbox(feature);
+		map.fitBounds(
+			[
+				[minLng, minLat],
+				[maxLng, maxLat]
+			],
+			{ padding: 45, duration: 800 }
+		);
+	}
+
+	async function handleRegionClick(feature: GeoJSONFeature) {
+		if (!map) return;
+
+		const code = feature.properties.adm1_psgc as number;
+		const name = feature.properties.adm1_en as string;
+
+		selectedRegion = { code, name };
+		selectedProvince = null;
+		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
+
+		// Loads chunk from src/lib/assets/geojson/regions/
+		const provData = await loadGeoJson(`regions/lowres/provdists-region-${code}.${RES}.json`);
+		await (map.getSource('provinces') as GeoJSONSource).setData(provData);
+
+		// Hide regions completely so borders, coastlines, and click handlers don't bleed through
+		map.setLayoutProperty('regions-fill', 'visibility', 'none');
+		map.setLayoutProperty('regions-line', 'visibility', 'none');
+
+		// Ensure provinces are visible
+		map.setLayoutProperty('provinces-fill', 'visibility', 'visible');
+		map.setLayoutProperty('provinces-line', 'visibility', 'visible');
+
+		flyToFeature(feature);
+	}
+
+	async function handleProvinceClick(feature: GeoJSONFeature) {
+		if (!map) return;
+
+		const code = feature.properties.adm2_psgc as number;
+		const name = feature.properties.adm2_en as string;
+
+		selectedProvince = { code, name };
+
+		// Loads chunk from src/lib/assets/geojson/provdists/
+		const cityData = await loadGeoJson(`provdists/lowres/municities-provdist-${code}.${RES}.json`);
+		await (map.getSource('cities') as GeoJSONSource).setData(cityData);
+
+		// Hide provinces completely
+		map.setLayoutProperty('provinces-fill', 'visibility', 'none');
+		map.setLayoutProperty('provinces-line', 'visibility', 'none');
+
+		flyToFeature(feature);
+	}
+
+	function bindLayerEvents(
+		layerId: string,
+		sourceId: string,
+		nameProp: string,
+		onClick: (feature: GeoJSONFeature) => void
+	) {
 		if (!map) return;
 
 		let hoveredId: string | number | undefined;
@@ -25,6 +118,7 @@
 
 			map.getCanvas().style.cursor = 'pointer';
 			const feat = e.features[0];
+
 			hoveredName = feat.properties[nameProp] as string;
 
 			if (hoveredId !== undefined) {
@@ -44,6 +138,11 @@
 				hoveredId = undefined;
 			}
 		});
+
+		map.on('click', layerId, (e) => {
+			if (!e.features?.length) return;
+			onClick(e.features[0]);
+		});
 	}
 
 	onMount(() => {
@@ -52,19 +151,23 @@
 			style: {
 				version: 8,
 				sources: {},
-				layers: [
-					{ id: 'background', type: 'background', paint: { 'background-color': 'lightblue' } }
-				],
-				center: [122.0, 12.5],
-				zoom: 4.5
-			}
+				layers: []
+			},
+			center: [122.0, 12.5],
+			zoom: 4.5,
+			minZoom: 4.5,
+			maxZoom: 9
 		});
 
 		map.on('load', () => {
 			if (!map) return;
 
 			// 1. Regions
-			map.addSource('regions', { type: 'geojson', data: countryData, generateId: true });
+			map.addSource('regions', {
+				type: 'geojson',
+				data: countryData as GeoJSON.FeatureCollection,
+				generateId: true
+			});
 			map.addLayer({
 				id: 'regions-fill',
 				type: 'fill',
@@ -73,9 +176,10 @@
 					'fill-color': [
 						'case',
 						['boolean', ['feature-state', 'hover'], false],
-						'darkslategray',
+						'darkblue',
 						'white'
-					]
+					],
+					'fill-opacity': 1
 				}
 			});
 			map.addLayer({
@@ -95,7 +199,14 @@
 				id: 'provinces-fill',
 				type: 'fill',
 				source: 'provinces',
-				paint: { 'fill-color': 'white' }
+				paint: {
+					'fill-color': [
+						'case',
+						['boolean', ['feature-state', 'hover'], false],
+						'darkblue',
+						'white'
+					]
+				}
 			});
 			map.addLayer({
 				id: 'provinces-line',
@@ -110,18 +221,45 @@
 				id: 'cities-fill',
 				type: 'fill',
 				source: 'cities',
-				paint: { 'fill-color': 'white' }
+				paint: {
+					'fill-color': [
+						'case',
+						['boolean', ['feature-state', 'hover'], false],
+						'darkblue',
+						'white'
+					]
+				}
 			});
 			map.addLayer({
 				id: 'cities-line',
 				type: 'line',
 				source: 'cities',
-				paint: { 'line-color': 'black', 'line-width': 18 }
+				paint: { 'line-color': 'black', 'line-width': 1 }
 			});
 
-			bindLayerEvents('regions-fill', 'regions', 'adm1_en');
+			bindLayerEvents('regions-fill', 'regions', 'adm1_en', (f) => void handleRegionClick(f));
+			bindLayerEvents('provinces-fill', 'provinces', 'adm2_en', (f) => void handleProvinceClick(f));
+			bindLayerEvents('cities-fill', 'cities', 'adm3_en', (feat) => {
+				console.log(feat.properties);
+			});
 		});
 	});
+
+	async function moveUp() {}
+
+	async function resetToCountry() {
+		if (!map) return;
+		selectedRegion = null;
+		selectedProvince = null;
+		await (map.getSource('provinces') as GeoJSONSource).setData(emptyFeatureCollection);
+		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
+		// Restore regions and provinces visibility
+		map.setLayoutProperty('regions-fill', 'visibility', 'visible');
+		map.setLayoutProperty('regions-line', 'visibility', 'visible');
+		map.setLayoutProperty('provinces-fill', 'visibility', 'visible');
+		map.setLayoutProperty('provinces-line', 'visibility', 'visible');
+		map.flyTo({ center: [122.0, 12.5], zoom: 4.5, duration: 800 });
+	}
 
 	onDestroy(() => {
 		if (map) map.remove();
@@ -129,6 +267,10 @@
 </script>
 
 <div class="flex h-dvh flex-col items-stretch">
-	<h1 class="p-2 text-center font-bold">{hoveredName ?? 'Philippines'}</h1>
+	<div class="flex flex-row items-center justify-between gap-4 p-2">
+		<h1 class="text-center font-bold">{loading ? 'Loading' : (hoveredName ?? 'Philippines')}</h1>
+		<Button onclick={resetToCountry}>Reset to country</Button>
+	</div>
+
 	<div bind:this={mapContainer} class="basis-full"></div>
 </div>
