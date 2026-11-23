@@ -69,7 +69,14 @@
 				id: 'regions-fill',
 				type: 'fill',
 				source: 'regions',
-				paint: { 'fill-color': 'white' }
+				paint: {
+					'fill-color': [
+						'case',
+						['boolean', ['feature-state', 'hover'], false],
+						'darkslategray',
+						'white'
+					]
+				}
 			});
 			map.addLayer({
 				id: 'regions-line',
