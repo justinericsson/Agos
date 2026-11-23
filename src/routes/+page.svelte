@@ -4,10 +4,10 @@
 	import Entry from '#lib/components/Entry.svelte';
 </script>
 
-<header class="bg-olive-50 p-4 shadow-lg">
-	<h1 class="text-center font-serif text-4xl font-bold">Agos</h1>
-</header>
-<div class="flex min-h-dvh flex-col gap-8 bg-olive-50 p-8">
+<div class="flex min-h-dvh flex-col gap-8 bg-olive-50 p-8 lg:pr-16 lg:pl-16">
+	<header class="bg-olive-50 p-4 shadow-md">
+		<h1 class="text-center font-serif text-4xl font-bold">Agos</h1>
+	</header>
 	<div class="flex flex-1 flex-col gap-8 lg:flex-row lg:items-start">
 		<Map
 			class="h-[65dvh] w-full min-w-0 rounded-lg border-2 border-olive-600 lg:h-[75dvh] lg:basis-1/2"
