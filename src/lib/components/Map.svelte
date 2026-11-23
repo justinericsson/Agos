@@ -6,7 +6,10 @@
 
 	import countryData from '#lib/assets/geojson/country/lowres/country.0.001.json';
 	import bbox from '@turf/bbox';
+	import * as Breadcrumb from '#lib/components/ui/breadcrumb/index.ts';
 	import Button from './ui/button/button.svelte';
+
+	type BoundingBox = [[number, number], [number, number]];
 
 	setWorkerUrl(workerUrl);
 
@@ -17,7 +20,7 @@
 	]);
 
 	let hoveredName = $state<string | null>(null);
-	let selectedRegion = $state<{ code: number; name: string } | null>(null);
+	let selectedRegion = $state<{ code: number; name: string; bounds: BoundingBox } | null>(null);
 	let selectedProvince = $state<{ code: number; name: string } | null>(null);
 	let loading = $state(false);
 
@@ -28,122 +31,6 @@
 		type: 'FeatureCollection',
 		features: []
 	};
-
-	async function loadGeoJson(relativePath: string): Promise<GeoJSON.FeatureCollection> {
-		const key = `/src/lib/assets/geojson/${relativePath}`;
-		const promise = geojsonModules[key];
-
-		if (!promise) {
-			throw new Error(`GeoJSON asset not found at ${key}`);
-		}
-
-		loading = true;
-		try {
-			const mod = await promise();
-			return mod.default as GeoJSON.FeatureCollection;
-		} finally {
-			loading = false;
-		}
-	}
-
-	function flyToFeature(feature: GeoJSONFeature) {
-		if (!map) return;
-
-		const [minLng, minLat, maxLng, maxLat] = bbox(feature);
-		map.fitBounds(
-			[
-				[minLng, minLat],
-				[maxLng, maxLat]
-			],
-			{ padding: 45, duration: 800 }
-		);
-	}
-
-	async function handleRegionClick(feature: GeoJSONFeature) {
-		if (!map) return;
-
-		const code = feature.properties.adm1_psgc as number;
-		const name = feature.properties.adm1_en as string;
-
-		selectedRegion = { code, name };
-		selectedProvince = null;
-		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
-
-		// Loads chunk from src/lib/assets/geojson/regions/
-		const provData = await loadGeoJson(`regions/lowres/provdists-region-${code}.${RES}.json`);
-		await (map.getSource('provinces') as GeoJSONSource).setData(provData);
-
-		// Hide regions completely so borders, coastlines, and click handlers don't bleed through
-		map.setLayoutProperty('regions-fill', 'visibility', 'none');
-		map.setLayoutProperty('regions-line', 'visibility', 'none');
-
-		// Ensure provinces are visible
-		map.setLayoutProperty('provinces-fill', 'visibility', 'visible');
-		map.setLayoutProperty('provinces-line', 'visibility', 'visible');
-
-		flyToFeature(feature);
-	}
-
-	async function handleProvinceClick(feature: GeoJSONFeature) {
-		if (!map) return;
-
-		const code = feature.properties.adm2_psgc as number;
-		const name = feature.properties.adm2_en as string;
-
-		selectedProvince = { code, name };
-
-		// Loads chunk from src/lib/assets/geojson/provdists/
-		const cityData = await loadGeoJson(`provdists/lowres/municities-provdist-${code}.${RES}.json`);
-		await (map.getSource('cities') as GeoJSONSource).setData(cityData);
-
-		// Hide provinces completely
-		map.setLayoutProperty('provinces-fill', 'visibility', 'none');
-		map.setLayoutProperty('provinces-line', 'visibility', 'none');
-
-		flyToFeature(feature);
-	}
-
-	function bindLayerEvents(
-		layerId: string,
-		sourceId: string,
-		nameProp: string,
-		onClick: (feature: GeoJSONFeature) => void
-	) {
-		if (!map) return;
-
-		let hoveredId: string | number | undefined;
-
-		map.on('mousemove', layerId, (e) => {
-			if (!map || !e.features?.length) return;
-
-			map.getCanvas().style.cursor = 'pointer';
-			const feat = e.features[0];
-
-			hoveredName = feat.properties[nameProp] as string;
-
-			if (hoveredId !== undefined) {
-				map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
-			}
-			hoveredId = feat.id;
-			map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: true });
-		});
-
-		map.on('mouseleave', layerId, () => {
-			if (!map) return;
-
-			map.getCanvas().style.cursor = '';
-			hoveredName = null;
-			if (hoveredId !== undefined) {
-				map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
-				hoveredId = undefined;
-			}
-		});
-
-		map.on('click', layerId, (e) => {
-			if (!e.features?.length) return;
-			onClick(e.features[0]);
-		});
-	}
 
 	onMount(() => {
 		map = new MapLibre({
@@ -156,7 +43,8 @@
 			center: [122.0, 12.5],
 			zoom: 4.5,
 			minZoom: 4.5,
-			maxZoom: 9
+			maxZoom: 9,
+			attributionControl: false
 		});
 
 		map.on('load', () => {
@@ -245,12 +133,133 @@
 		});
 	});
 
-	async function moveUp() {}
+	async function loadGeoJson(relativePath: string): Promise<GeoJSON.FeatureCollection> {
+		const key = `/src/lib/assets/geojson/${relativePath}`;
+		const promise = geojsonModules[key];
+
+		if (!promise) {
+			throw new Error(`GeoJSON asset not found at ${key}`);
+		}
+
+		loading = true;
+		try {
+			const mod = await promise();
+			return mod.default as GeoJSON.FeatureCollection;
+		} finally {
+			loading = false;
+		}
+	}
+
+	function flyToFeature(feature: GeoJSONFeature) {
+		if (!map) return;
+
+		const [minLng, minLat, maxLng, maxLat] = bbox(feature);
+		map.fitBounds(
+			[
+				[minLng, minLat],
+				[maxLng, maxLat]
+			],
+			{ padding: 45, duration: 800 }
+		);
+	}
+
+	async function handleRegionClick(feature: GeoJSONFeature) {
+		if (!map) return;
+
+		const code = feature.properties.adm1_psgc as number;
+		const name = feature.properties.adm1_en as string;
+
+		const [minLng, minLat, maxLng, maxLat] = bbox(feature);
+		const bounds: BoundingBox = [
+			[minLng, minLat],
+			[maxLng, maxLat]
+		];
+
+		selectedRegion = { code, name, bounds };
+		selectedProvince = null;
+		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
+
+		// Loads chunk from src/lib/assets/geojson/regions/
+		const provData = await loadGeoJson(`regions/lowres/provdists-region-${code}.${RES}.json`);
+		await (map.getSource('provinces') as GeoJSONSource).setData(provData);
+
+		// Hide regions completely so borders, coastlines, and click handlers don't bleed through
+		map.setLayoutProperty('regions-fill', 'visibility', 'none');
+		map.setLayoutProperty('regions-line', 'visibility', 'none');
+
+		// Ensure provinces are visible
+		map.setLayoutProperty('provinces-fill', 'visibility', 'visible');
+		map.setLayoutProperty('provinces-line', 'visibility', 'visible');
+
+		flyToFeature(feature);
+	}
+
+	async function handleProvinceClick(feature: GeoJSONFeature) {
+		if (!map) return;
+
+		const code = feature.properties.adm2_psgc as number;
+		const name = feature.properties.adm2_en as string;
+
+		selectedProvince = { code, name };
+
+		// Loads chunk from src/lib/assets/geojson/provdists/
+		const cityData = await loadGeoJson(`provdists/lowres/municities-provdist-${code}.${RES}.json`);
+		await (map.getSource('cities') as GeoJSONSource).setData(cityData);
+
+		// Hide provinces completely
+		map.setLayoutProperty('provinces-fill', 'visibility', 'none');
+		map.setLayoutProperty('provinces-line', 'visibility', 'none');
+
+		flyToFeature(feature);
+	}
+
+	function bindLayerEvents(
+		layerId: string,
+		sourceId: string,
+		nameProp: string,
+		onClick: (feature: GeoJSONFeature) => void
+	) {
+		if (!map) return;
+
+		let hoveredId: string | number | undefined;
+
+		map.on('mousemove', layerId, (e) => {
+			if (!map || !e.features?.length) return;
+
+			map.getCanvas().style.cursor = 'pointer';
+			const feat = e.features[0];
+
+			hoveredName = feat.properties[nameProp] as string;
+
+			if (hoveredId !== undefined) {
+				map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
+			}
+			hoveredId = feat.id;
+			map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: true });
+		});
+
+		map.on('mouseleave', layerId, () => {
+			if (!map) return;
+
+			map.getCanvas().style.cursor = '';
+			hoveredName = null;
+			if (hoveredId !== undefined) {
+				map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
+				hoveredId = undefined;
+			}
+		});
+
+		map.on('click', layerId, (e) => {
+			if (!e.features?.length) return;
+			onClick(e.features[0]);
+		});
+	}
 
 	async function resetToCountry() {
 		if (!map) return;
 		selectedRegion = null;
 		selectedProvince = null;
+
 		await (map.getSource('provinces') as GeoJSONSource).setData(emptyFeatureCollection);
 		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
 		// Restore regions and provinces visibility
@@ -261,16 +270,46 @@
 		map.flyTo({ center: [122.0, 12.5], zoom: 4.5, duration: 800 });
 	}
 
+	async function resetToRegion() {
+		if (!map || !selectedRegion) return;
+
+		selectedProvince = null;
+
+		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
+
+		map.setLayoutProperty('provinces-fill', 'visibility', 'visible');
+		map.setLayoutProperty('provinces-line', 'visibility', 'visible');
+		map.fitBounds(selectedRegion.bounds, { padding: 45, duration: 800 });
+	}
+
+	async function resetToProvince() {}
+
 	onDestroy(() => {
 		if (map) map.remove();
 	});
 </script>
 
 <div class="flex h-dvh flex-col items-stretch">
-	<div class="flex flex-row items-center justify-between gap-4 p-2">
-		<h1 class="text-center font-bold">{loading ? 'Loading' : (hoveredName ?? 'Philippines')}</h1>
-		<Button onclick={resetToCountry}>Reset to country</Button>
-	</div>
+	<Breadcrumb.Root class="m-2 self-center">
+		<Breadcrumb.List>
+			<Breadcrumb.Item>
+				<Button variant="link" onclick={resetToCountry}>Philippines</Button>
+			</Breadcrumb.Item>
+			{#if selectedRegion}
+				<Breadcrumb.Separator />
+				<Breadcrumb.Item>
+					<Button variant="link" onclick={resetToRegion}>{selectedRegion.name}</Button>
+				</Breadcrumb.Item>
+			{/if}
+			{#if selectedProvince}
+				<Breadcrumb.Separator />
+				<Breadcrumb.Item>
+					<Button variant="link">{selectedProvince.name}</Button>
+				</Breadcrumb.Item>
+			{/if}
+		</Breadcrumb.List>
+	</Breadcrumb.Root>
 
 	<div bind:this={mapContainer} class="basis-full"></div>
+	<p class="m-4 min-h-6 text-center">{loading ? 'Loading ' : (hoveredName ?? '')}</p>
 </div>
