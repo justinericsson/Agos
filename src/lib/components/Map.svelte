@@ -47,7 +47,6 @@
 			center: [122.0, 12.5],
 			zoom: 4.5,
 			minZoom: 4.5,
-			maxZoom: 14,
 			attributionControl: false
 		});
 
