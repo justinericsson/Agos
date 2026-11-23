@@ -40,9 +40,7 @@
 			style: {
 				version: 8,
 				sources: {},
-				layers: [
-					{ id: 'background', type: 'background', paint: { 'background-color': 'lightblue' } }
-				]
+				layers: []
 			},
 			center: [122.0, 12.5],
 			zoom: 4.5,
@@ -363,7 +361,7 @@
 	});
 </script>
 
-<div class="flex h-dvh flex-col items-stretch">
+<div class="flex h-dvh flex-col items-stretch bg-sky-200">
 	<Breadcrumb.Root class="m-2 self-center">
 		<Breadcrumb.List>
 			<Breadcrumb.Item>
