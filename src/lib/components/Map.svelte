@@ -16,12 +16,14 @@
 	const RES = '0.001';
 	const geojsonModules = import.meta.glob([
 		'#lib/assets/geojson/regions/lowres/*.json',
-		'#lib/assets/geojson/provdists/lowres/*.json'
+		'#lib/assets/geojson/provdists/lowres/*.json',
+		'#lib/assets/geojson/municities/lowres/*.json'
 	]);
 
 	let hoveredName = $state<string | null>(null);
 	let selectedRegion = $state<{ code: number; name: string; bounds: BoundingBox } | null>(null);
-	let selectedProvince = $state<{ code: number; name: string } | null>(null);
+	let selectedProvince = $state<{ code: number; name: string; bounds: BoundingBox } | null>(null);
+	let selectedCity = $state<{ code: number; name: string } | null>(null);
 	let loading = $state(false);
 
 	let mapContainer: HTMLDivElement;
@@ -38,12 +40,14 @@
 			style: {
 				version: 8,
 				sources: {},
-				layers: []
+				layers: [
+					{ id: 'background', type: 'background', paint: { 'background-color': 'lightblue' } }
+				]
 			},
 			center: [122.0, 12.5],
 			zoom: 4.5,
 			minZoom: 4.5,
-			maxZoom: 9,
+			maxZoom: 14,
 			attributionControl: false
 		});
 
@@ -125,11 +129,35 @@
 				paint: { 'line-color': 'black', 'line-width': 1 }
 			});
 
+			map.addSource('barangays', {
+				type: 'geojson',
+				data: emptyFeatureCollection,
+				generateId: true
+			});
+			map.addLayer({
+				id: 'barangays-fill',
+				type: 'fill',
+				source: 'barangays',
+				paint: {
+					'fill-color': [
+						'case',
+						['boolean', ['feature-state', 'hover'], false],
+						'darkblue',
+						'white'
+					]
+				}
+			});
+			map.addLayer({
+				id: 'barangays-line',
+				type: 'line',
+				source: 'barangays',
+				paint: { 'line-color': 'black', 'line-width': 1 }
+			});
+
 			bindLayerEvents('regions-fill', 'regions', 'adm1_en', (f) => void handleRegionClick(f));
 			bindLayerEvents('provinces-fill', 'provinces', 'adm2_en', (f) => void handleProvinceClick(f));
-			bindLayerEvents('cities-fill', 'cities', 'adm3_en', (feat) => {
-				console.log(feat.properties);
-			});
+			bindLayerEvents('cities-fill', 'cities', 'adm3_en', (f) => void handleCityClick(f));
+			bindLayerEvents('barangays-fill', 'barangays', 'adm4_en', (f) => console.log(f));
 		});
 	});
 
@@ -176,8 +204,6 @@
 		];
 
 		selectedRegion = { code, name, bounds };
-		selectedProvince = null;
-		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
 
 		// Loads chunk from src/lib/assets/geojson/regions/
 		const provData = await loadGeoJson(`regions/lowres/provdists-region-${code}.${RES}.json`);
@@ -200,7 +226,13 @@
 		const code = feature.properties.adm2_psgc as number;
 		const name = feature.properties.adm2_en as string;
 
-		selectedProvince = { code, name };
+		const [minLng, minLat, maxLng, maxLat] = bbox(feature);
+		const bounds: BoundingBox = [
+			[minLng, minLat],
+			[maxLng, maxLat]
+		];
+
+		selectedProvince = { code, name, bounds };
 
 		// Loads chunk from src/lib/assets/geojson/provdists/
 		const cityData = await loadGeoJson(`provdists/lowres/municities-provdist-${code}.${RES}.json`);
@@ -209,6 +241,29 @@
 		// Hide provinces completely
 		map.setLayoutProperty('provinces-fill', 'visibility', 'none');
 		map.setLayoutProperty('provinces-line', 'visibility', 'none');
+
+		map.setLayoutProperty('cities-fill', 'visibility', 'visible');
+		map.setLayoutProperty('cities-line', 'visibility', 'visible');
+
+		flyToFeature(feature);
+	}
+
+	async function handleCityClick(feature: GeoJSONFeature) {
+		if (!map) return;
+
+		const code = feature.properties.adm3_psgc as number;
+		const name = feature.properties.adm3_en as string;
+
+		selectedCity = { code, name };
+
+		const cityData = await loadGeoJson(`municities/lowres/bgysubmuns-municity-${code}.${RES}.json`);
+		await (map.getSource('barangays') as GeoJSONSource).setData(cityData);
+
+		map.setLayoutProperty('cities-fill', 'visibility', 'none');
+		map.setLayoutProperty('cities-line', 'visibility', 'none');
+
+		map.setLayoutProperty('barangays-fill', 'visibility', 'visible');
+		map.setLayoutProperty('barangays-line', 'visibility', 'visible');
 
 		flyToFeature(feature);
 	}
@@ -262,11 +317,10 @@
 
 		await (map.getSource('provinces') as GeoJSONSource).setData(emptyFeatureCollection);
 		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
-		// Restore regions and provinces visibility
+		await (map.getSource('barangays') as GeoJSONSource).setData(emptyFeatureCollection);
+		// Restore regions provinces, and cities visibility
 		map.setLayoutProperty('regions-fill', 'visibility', 'visible');
 		map.setLayoutProperty('regions-line', 'visibility', 'visible');
-		map.setLayoutProperty('provinces-fill', 'visibility', 'visible');
-		map.setLayoutProperty('provinces-line', 'visibility', 'visible');
 		map.flyTo({ center: [122.0, 12.5], zoom: 4.5, duration: 800 });
 	}
 
@@ -274,15 +328,27 @@
 		if (!map || !selectedRegion) return;
 
 		selectedProvince = null;
+		selectedCity = null;
 
 		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
+		await (map.getSource('barangays') as GeoJSONSource).setData(emptyFeatureCollection);
 
 		map.setLayoutProperty('provinces-fill', 'visibility', 'visible');
 		map.setLayoutProperty('provinces-line', 'visibility', 'visible');
 		map.fitBounds(selectedRegion.bounds, { padding: 45, duration: 800 });
 	}
 
-	async function resetToProvince() {}
+	async function resetToProvince() {
+		if (!map || !selectedRegion || !selectedProvince) return;
+
+		selectedCity = null;
+
+		await (map.getSource('barangays') as GeoJSONSource).setData(emptyFeatureCollection);
+
+		map.setLayoutProperty('cities-fill', 'visibility', 'visible');
+		map.setLayoutProperty('cities-line', 'visibility', 'visible');
+		map.fitBounds(selectedProvince.bounds, { padding: 45, duration: 800 });
+	}
 
 	onDestroy(() => {
 		if (map) map.remove();
@@ -304,7 +370,13 @@
 			{#if selectedProvince}
 				<Breadcrumb.Separator />
 				<Breadcrumb.Item>
-					<Button variant="link">{selectedProvince.name}</Button>
+					<Button variant="link" onclick={resetToProvince}>{selectedProvince.name}</Button>
+				</Breadcrumb.Item>
+			{/if}
+			{#if selectedCity}
+				<Breadcrumb.Separator />
+				<Breadcrumb.Item>
+					<Button variant="link">{selectedCity.name}</Button>
 				</Breadcrumb.Item>
 			{/if}
 		</Breadcrumb.List>
