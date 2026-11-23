@@ -9,9 +9,14 @@
 	import * as Breadcrumb from '#lib/components/ui/breadcrumb/index.ts';
 	import Button from './ui/button/button.svelte';
 
+	let props: { class?: string } = $props();
+
 	type BoundingBox = [[number, number], [number, number]];
 
 	setWorkerUrl(workerUrl);
+
+	const hoverFill = 'oklch(45% 0.085 224.283)';
+	const defaultFill = 'oklch(96.6% 0.005 106.5)';
 
 	const RES = '0.001';
 	const geojsonModules = import.meta.glob([
@@ -66,8 +71,8 @@
 					'fill-color': [
 						'case',
 						['boolean', ['feature-state', 'hover'], false],
-						'darkblue',
-						'white'
+						hoverFill,
+						defaultFill
 					],
 					'fill-opacity': 1
 				}
@@ -93,8 +98,8 @@
 					'fill-color': [
 						'case',
 						['boolean', ['feature-state', 'hover'], false],
-						'darkblue',
-						'white'
+						hoverFill,
+						defaultFill
 					]
 				}
 			});
@@ -115,8 +120,8 @@
 					'fill-color': [
 						'case',
 						['boolean', ['feature-state', 'hover'], false],
-						'darkblue',
-						'white'
+						hoverFill,
+						defaultFill
 					]
 				}
 			});
@@ -140,8 +145,8 @@
 					'fill-color': [
 						'case',
 						['boolean', ['feature-state', 'hover'], false],
-						'darkblue',
-						'white'
+						hoverFill,
+						defaultFill
 					]
 				}
 			});
@@ -361,7 +366,7 @@
 	});
 </script>
 
-<div class="flex h-dvh flex-col items-stretch bg-sky-200">
+<div class={`overflow-hidde flex flex-col items-stretch justify-stretch ${props.class}`}>
 	<Breadcrumb.Root class="m-2 self-center">
 		<Breadcrumb.List>
 			<Breadcrumb.Item>
@@ -388,6 +393,6 @@
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
 
-	<div bind:this={mapContainer} class="basis-full"></div>
+	<div bind:this={mapContainer} class="relative min-h-0 flex-1"></div>
 	<p class="m-4 min-h-6 text-center">{loading ? 'Loading ' : (hoveredName ?? '')}</p>
 </div>

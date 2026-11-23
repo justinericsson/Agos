@@ -1,7 +1,7 @@
 @import 'tailwindcss';
-@import "tw-animate-css";
-@import "shadcn-svelte/tailwind.css";
-@import "@fontsource-variable/inter";
+@import 'tw-animate-css';
+@import 'shadcn-svelte/tailwind.css';
+@import '@fontsource-variable/inter';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -125,5 +125,9 @@
 	}
 	html {
 		@apply font-sans;
+	}
+	a {
+		color: var(--color-cyan-950);
+		font-weight: 600;
 	}
 }
