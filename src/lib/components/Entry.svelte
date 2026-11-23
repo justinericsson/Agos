@@ -4,8 +4,9 @@
 	let props: {
 		variant: 'info' | 'problem' | 'solution';
 		title: string;
-		body: string;
+		description: string;
 		links?: { short: string; url: string }[];
+		location: string;
 	} = $props();
 
 	const colors = {
@@ -15,17 +16,19 @@
 	};
 </script>
 
-<Card.Root class="pt-0">
+<Card.Root class=" pt-0">
 	<Card.Header class={`p-4 ${colors[props.variant]}`}>
-		<Card.Title class="text-olive-50">{props.title}</Card.Title>
-
+		<Card.Title class=" text-olive-50">{props.title}</Card.Title>
+		<Card.Description class="text-neutral-50">{props.location}</Card.Description>
+	</Card.Header>
+	<Card.Content class="pl-4">{props.description}</Card.Content>
+	<Card.Footer class="pl-4">
 		<div class="flex flex-row gap-2">
 			{#each props.links ?? [] as { short, url } (url)}
-				<a class="text-olive-50" href={url} rel="noopener noreferrer external" target="_blank">
+				<a href={url} rel="noopener noreferrer external" target="_blank">
 					{short}
 				</a>
 			{/each}
 		</div>
-	</Card.Header>
-	<Card.Content class="pl-4">{props.body}</Card.Content>
+	</Card.Footer>
 </Card.Root>

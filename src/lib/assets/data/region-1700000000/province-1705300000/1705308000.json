@@ -1,0 +1,74 @@
+{
+	"info": [
+		{
+			"title": "Tubbataha Reefs",
+			"description": "A 97,030-hectare marine sanctuary in Palawan and is located at the core of the Coral Triangle. The reefs are crucial for distributing coral and fish larvae in the Sulu Sea.",
+			"links": [
+				{
+					"url": "https://tubbatahareefs.org/about-tubbataha",
+					"short": "Reference"
+				}
+			],
+			"location": "Cagayancillo"
+		}
+	],
+	"problems": [
+		{
+			"title": "Illegal Fishing",
+			"description": "A perennial concern as fish productiivty dwindles",
+			"links": [
+				{
+					"url": "https://tubbatahareefs.org/about-tubbataha",
+					"short": "Reference"
+				}
+			],
+			"location": "Cagayancillo"
+		},
+		{
+			"title": "Marine Debris",
+			"description": "Plastic manufactured in other countries such as Malaysia, Indonesia, and Vietnam.",
+			"links": [
+				{
+					"url": "https://tubbatahareefs.org/about-tubbataha",
+					"short": "Reference"
+				}
+			],
+			"location": "Cagayancillo"
+		},
+		{
+			"title": "Climate Change",
+			"description": "Extreme temperatures caused by climate change resulted in coral bleaching, which affected up to 20% of the hard coral cover of the park in 2020.",
+			"links": [
+				{
+					"url": "https://tubbatahareefs.org/about-tubbataha",
+					"short": "Reference"
+				}
+			],
+			"location": "Cagayancillo"
+		}
+	],
+	"solutions": [
+		{
+			"title": "The Tubbataha Act",
+			"description": "Provides the legal and institutional framework for enforcement in the Tubbataha Reefs.",
+			"links": [
+				{
+					"url": "https://tubbatahareefs.org/law-enforcement",
+					"short": "Reference"
+				}
+			],
+			"location": "Cagayancillo"
+		},
+		{
+			"title": "Beach Reforestation",
+			"description": "The Cagayancillo Women for Tubbataha to grow saplings of beach forest trees in an effort to replenish tree populations on the islets of Tubbataha.",
+			"links": [
+				{
+					"url": "https://tubbatahareefs.org/law-enforcement",
+					"short": "Reference"
+				}
+			],
+			"location": "Cagayancillo"
+		}
+	]
+}

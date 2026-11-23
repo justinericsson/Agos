@@ -1,0 +1,23 @@
+{
+	"info": [
+		{
+			"title": "Boracay",
+			"description": "Famous for its white sand beaches, Boracay is one of the top traval desinations in the country.",
+			"location": "Malay"
+		}
+	],
+	"problems": [
+		{
+			"title": "Coral Reef Decline",
+			"description": "Increase in tourism has led to a significant decrease in Boracay's coral cover from 2010-2015.",
+			"links": [
+				{
+					"url": "https://www.jst.go.jp/global/english/kadai/h2109_pilipinas.html",
+					"short": "Study"
+				}
+			],
+			"location": "Malay"
+		}
+	],
+	"solutions": []
+}

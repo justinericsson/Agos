@@ -1,0 +1,23 @@
+{
+	"info": [
+		{
+			"title": "LPPCHEA",
+			"description": "The Las Piñas-Parañaque Critical Habitat and Ecotourism Area is a protected wetland along the coasts of the two cities..",
+			"location": "Parañaque"
+		}
+	],
+	"problems": [],
+	"solutions": [
+		{
+			"title": "Clean Ups",
+			"description": "Numerous organizations have worked together to clean up the wetlands of LPPCHEA.",
+			"links": [
+				{
+					"url": "https://tribune.net.ph/2026/11/17/228-volunteers-clean-up-las-piñas-parañaque-wetland",
+					"short": "November 2026 Cleanup"
+				}
+			],
+			"location": "Parañaque"
+		}
+	]
+}

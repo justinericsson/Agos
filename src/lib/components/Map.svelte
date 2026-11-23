@@ -3,13 +3,18 @@
 	import { onDestroy, onMount } from 'svelte';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-
 	import countryData from '#lib/assets/geojson/country/lowres/country.0.001.json';
 	import bbox from '@turf/bbox';
 	import * as Breadcrumb from '#lib/components/ui/breadcrumb/index.ts';
 	import Button from './ui/button/button.svelte';
 
-	let props: { class?: string } = $props();
+	export type MapLocation = {
+		region: number | null;
+		province: number | null;
+		city: number | null;
+	};
+
+	let props: { class?: string; onLocationChange: (l: MapLocation) => void } = $props();
 
 	type BoundingBox = [[number, number], [number, number]];
 
@@ -38,6 +43,14 @@
 		type: 'FeatureCollection',
 		features: []
 	};
+
+	function emitLocation() {
+		props.onLocationChange({
+			region: selectedRegion?.code ?? null,
+			province: selectedProvince?.code ?? null,
+			city: selectedCity?.code ?? null
+		});
+	}
 
 	onMount(() => {
 		map = new MapLibre({
@@ -221,6 +234,7 @@
 		map.setLayoutProperty('provinces-line', 'visibility', 'visible');
 
 		hoveredName = null;
+		emitLocation();
 		flyToFeature(feature);
 	}
 
@@ -250,6 +264,7 @@
 		map.setLayoutProperty('cities-line', 'visibility', 'visible');
 
 		hoveredName = null;
+		emitLocation();
 		flyToFeature(feature);
 	}
 
@@ -271,6 +286,7 @@
 		map.setLayoutProperty('barangays-line', 'visibility', 'visible');
 
 		hoveredName = null;
+		emitLocation();
 		flyToFeature(feature);
 	}
 
@@ -330,6 +346,8 @@
 		// Restore regions provinces, and cities visibility
 		map.setLayoutProperty('regions-fill', 'visibility', 'visible');
 		map.setLayoutProperty('regions-line', 'visibility', 'visible');
+
+		emitLocation();
 		map.flyTo({ center: [122.0, 12.5], zoom: 4.5, duration: 800 });
 	}
 
@@ -345,6 +363,8 @@
 
 		map.setLayoutProperty('provinces-fill', 'visibility', 'visible');
 		map.setLayoutProperty('provinces-line', 'visibility', 'visible');
+
+		emitLocation();
 		map.fitBounds(selectedRegion.bounds, { padding: 45, duration: 800 });
 	}
 
@@ -358,6 +378,8 @@
 
 		map.setLayoutProperty('cities-fill', 'visibility', 'visible');
 		map.setLayoutProperty('cities-line', 'visibility', 'visible');
+
+		emitLocation();
 		map.fitBounds(selectedProvince.bounds, { padding: 45, duration: 800 });
 	}
 
