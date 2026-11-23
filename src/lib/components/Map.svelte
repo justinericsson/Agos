@@ -8,10 +8,43 @@
 
 	import countryData from '#lib/assets/geojson/country/lowres/country.0.001.json';
 
+	let hoveredName = $state<string | null>(null);
+
 	let mapContainer: HTMLDivElement;
 	let map: MapLibre;
 
 	const emptyFeatureCollection = { type: 'FeatureCollection', features: [] as object[] };
+
+	function bindLayerEvents(layerId: string, sourceId: string, nameProp: string) {
+		if (!map) return;
+
+		let hoveredId: string | number | undefined;
+
+		map.on('mousemove', layerId, (e) => {
+			if (!map || !e.features?.length) return;
+
+			map.getCanvas().style.cursor = 'pointer';
+			const feat = e.features[0];
+			hoveredName = feat.properties[nameProp] as string;
+
+			if (hoveredId !== undefined) {
+				map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
+			}
+			hoveredId = feat.id;
+			map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: true });
+		});
+
+		map.on('mouseleave', layerId, () => {
+			if (!map) return;
+
+			map.getCanvas().style.cursor = '';
+			hoveredName = null;
+			if (hoveredId !== undefined) {
+				map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
+				hoveredId = undefined;
+			}
+		});
+	}
 
 	onMount(() => {
 		map = new MapLibre({
@@ -78,6 +111,8 @@
 				source: 'cities',
 				paint: { 'line-color': 'black', 'line-width': 18 }
 			});
+
+			bindLayerEvents('regions-fill', 'regions', 'adm1_en');
 		});
 	});
 
@@ -86,4 +121,7 @@
 	});
 </script>
 
-<div bind:this={mapContainer} class="h-dvh"></div>
+<div class="flex h-dvh flex-col items-stretch">
+	<h1 class="p-2 text-center font-bold">{hoveredName ?? 'Philippines'}</h1>
+	<div bind:this={mapContainer} class="basis-full"></div>
+</div>
