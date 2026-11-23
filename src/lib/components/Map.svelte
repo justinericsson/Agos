@@ -216,6 +216,7 @@
 		map.setLayoutProperty('provinces-fill', 'visibility', 'visible');
 		map.setLayoutProperty('provinces-line', 'visibility', 'visible');
 
+		hoveredName = null;
 		flyToFeature(feature);
 	}
 
@@ -244,6 +245,7 @@
 		map.setLayoutProperty('cities-fill', 'visibility', 'visible');
 		map.setLayoutProperty('cities-line', 'visibility', 'visible');
 
+		hoveredName = null;
 		flyToFeature(feature);
 	}
 
@@ -264,6 +266,7 @@
 		map.setLayoutProperty('barangays-fill', 'visibility', 'visible');
 		map.setLayoutProperty('barangays-line', 'visibility', 'visible');
 
+		hoveredName = null;
 		flyToFeature(feature);
 	}
 
@@ -315,6 +318,7 @@
 		selectedRegion = null;
 		selectedProvince = null;
 		selectedCity = null;
+		hoveredName = null;
 
 		await (map.getSource('provinces') as GeoJSONSource).setData(emptyFeatureCollection);
 		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
@@ -330,6 +334,7 @@
 
 		selectedProvince = null;
 		selectedCity = null;
+		hoveredName = null;
 
 		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
 		await (map.getSource('barangays') as GeoJSONSource).setData(emptyFeatureCollection);
@@ -343,6 +348,7 @@
 		if (!map || !selectedRegion || !selectedProvince) return;
 
 		selectedCity = null;
+		hoveredName = null;
 
 		await (map.getSource('barangays') as GeoJSONSource).setData(emptyFeatureCollection);
 
