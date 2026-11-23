@@ -15,7 +15,7 @@
 	};
 </script>
 
-<Card.Root class="overflow-clip pt-0">
+<Card.Root class="pt-0">
 	<Card.Header class={`p-4 ${colors[props.variant]}`}>
 		<Card.Title class="text-olive-50">{props.title}</Card.Title>
 

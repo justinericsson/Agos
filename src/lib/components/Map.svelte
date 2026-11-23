@@ -15,8 +15,8 @@
 
 	setWorkerUrl(workerUrl);
 
-	const hoverFill = 'oklch(45% 0.085 224.283)';
-	const defaultFill = 'oklch(96.6% 0.005 106.5)';
+	const hoverFill = 'oklch(39.1% 0.09 240.876)';
+	const defaultFill = 'oklch(92.2% 0 none)';
 
 	const RES = '0.001';
 	const geojsonModules = import.meta.glob([

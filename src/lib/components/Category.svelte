@@ -7,7 +7,7 @@
 
 <div class="flex flex-col gap-4">
 	<p class="font-serif text-xl font-semibold">{props.title}</p>
-	<Separator class=" bord bg-olive-600" />
+	<Separator class=" bord bg-black" />
 
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2">
 		{@render props.children()}
