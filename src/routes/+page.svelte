@@ -1,6 +1,7 @@
 <script>
 	import Map from '#lib/components/Map.svelte';
 	import InfoCard from '#lib/components/InfoCard.svelte';
+	import IssueCard from '#lib/components/IssueCard.svelte';
 </script>
 
 <header class="bg-olive-50 p-4 shadow-lg">
@@ -18,6 +19,15 @@
 				links={[{ short: 'hello', url: 'https://google.com' }]}
 			/>
 			<InfoCard title="Corals" body="Hello world" links={[]} />
+			<IssueCard
+				title="Corals"
+				body="Hello world"
+				links={[
+					{ short: 'hello', url: 'https://google.com' },
+					{ short: 'world', url: 'https://duckduckgo.com' }
+				]}
+			/>
+			<IssueCard title="Corals" body="Hello world" links={[]} />
 		</div>
 	</div>
 </div>

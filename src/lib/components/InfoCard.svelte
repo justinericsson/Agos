@@ -14,8 +14,10 @@
 		<Card.Description>{props.body}</Card.Description>
 	</Card.Header>
 	<Card.Footer>
-		{#each props.links as { short, url } (url)}
-			<a href={url} rel="noopener noreferrer external" target="_blank">{short}</a>
-		{/each}
+		<ul>
+			{#each props.links as { short, url } (url)}
+				<li><a href={url} rel="noopener noreferrer external" target="_blank">{short}</a></li>
+			{/each}
+		</ul>
 	</Card.Footer>
 </Card.Root>
