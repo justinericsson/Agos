@@ -312,8 +312,10 @@
 
 	async function resetToCountry() {
 		if (!map) return;
+
 		selectedRegion = null;
 		selectedProvince = null;
+		selectedCity = null;
 
 		await (map.getSource('provinces') as GeoJSONSource).setData(emptyFeatureCollection);
 		await (map.getSource('cities') as GeoJSONSource).setData(emptyFeatureCollection);
